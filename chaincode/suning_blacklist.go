@@ -52,14 +52,14 @@ type BlackRecord struct {
 func (blackRecord *BlackRecord) putBlackRecord(stub shim.ChaincodeStubInterface) error {
 	brBytes, err := json.Marshal(blackRecord)
 	if err != nil {
-		fmt.Println("PutBlackRecord Marshal fail:", err.Error())
-		return errors.New("PutBlackRecord Marshal fail:" + err.Error())
+		fmt.Println("putBlackRecord Marshal fail:", err.Error())
+		return errors.New("putBlackRecord Marshal fail:" + err.Error())
 	}
 
 	err = stub.PutState("BlackRecord:"+blackRecord.RecordId, brBytes)
 	if err != nil {
-		fmt.Println("PutBlackRecord PutState fail:", err.Error())
-		return errors.New("PutBlackRecord PutState fail:" + err.Error())
+		fmt.Println("putBlackRecord PutState fail:", err.Error())
+		return errors.New("putBlackRecord PutState fail:" + err.Error())
 	}
 
 	return nil
@@ -185,14 +185,14 @@ type Org struct {
 func (org *Org) putOrg(stub shim.ChaincodeStubInterface) error {
 	orgBytes, err := json.Marshal(org)
 	if err != nil {
-		fmt.Println("PutOrg Marshal fail:", err.Error())
-		return errors.New("PutOrg Marshal fail:" + err.Error())
+		fmt.Println("putOrg Marshal fail:", err.Error())
+		return errors.New("putOrg Marshal fail:" + err.Error())
 	}
 
 	err = stub.PutState("Org:"+org.OrgId, orgBytes)
 	if err != nil {
-		fmt.Println("PutOrg PutState fail:", err.Error())
-		return errors.New("PutOrg PutState fail:" + err.Error())
+		fmt.Println("putOrg PutState fail:", err.Error())
+		return errors.New("putOrg PutState fail:" + err.Error())
 	}
 
 	return nil
@@ -204,12 +204,12 @@ func (t *SimpleChaincode) getOrg(stub shim.ChaincodeStubInterface, id string) (*
 	var org Org
 	orgBytes, err := stub.GetState("Org:" + id)
 	if err != nil {
-		fmt.Println("queryOrg GetState fail:", err.Error())
+		fmt.Println("getOrg GetState fail:", err.Error())
 		return nil, err
 	}
 	err = json.Unmarshal(orgBytes, &org)
 	if err != nil {
-		fmt.Println("queryOrg Unmarshal fail:", err.Error())
+		fmt.Println("getOrg Unmarshal fail:", err.Error())
 		return nil, err
 	}
 
@@ -222,7 +222,7 @@ func sha1s(s string) string {
 	return hex.EncodeToString(r[:])
 }
 
-// Create Platform Center Agency , and issue credits.
+// Create Platform Agency , and issue initial credits.
 func (t *SimpleChaincode) Init(stub shim.ChaincodeStubInterface) pb.Response {
 	agency := &Agency{
 		Name:        "Agency",
@@ -287,15 +287,15 @@ func (t *SimpleChaincode) createOrg(stub shim.ChaincodeStubInterface, args []str
 	org := &Org{
 		OrgId:      args[1],
 		OrgName:    args[2],
-		OrgCredit:  0,
 		OrgAddr:    sha1s(args[1]),
+		OrgCredit:  0,
 		CreateTime: time.Now().In(loc).Format(layout),
 		UpdateTime: time.Now().In(loc).Format(layout),
 	}
 	err := org.putOrg(stub)
 	if err != nil {
 		fmt.Println("createOrg putOrg fail:", err.Error())
-		return shim.Error(err.Error())
+		return shim.Error("createOrg putOrg fail:" + err.Error())
 	}
 
 	return shim.Success(nil)
@@ -324,7 +324,7 @@ func (t *SimpleChaincode) submitRecord(stub shim.ChaincodeStubInterface, args []
 	err := record.putBlackRecord(stub)
 	if err != nil {
 		fmt.Println("submitRecord putBlackRecord fail:", err.Error())
-		return shim.Error(err.Error())
+		return shim.Error("submitRecord putBlackRecord fail:" + err.Error())
 	}
 
 	return shim.Success(nil)
@@ -337,7 +337,7 @@ func (t *SimpleChaincode) deleteRecord(stub shim.ChaincodeStubInterface, args []
 
 	org := t.getOrg(stub, args[1])
 	deleteType = args[2]
-	if queryType == "deleteById" {
+	if deleteType == "deleteById" {
 		if len(args) != 4 {
 			return shim.Error("Incorrect number of arguments. Expecting 3")
 		}
@@ -356,7 +356,7 @@ func (t *SimpleChaincode) deleteRecord(stub shim.ChaincodeStubInterface, args []
 				fmt.Println("record-%s does not belong to org-%s", id, orgId)
 			}
 		}
-	} else if queryType == "deleteAll" {
+	} else if deleteType == "deleteByOrg" {
 		//TODO
 	}
 
@@ -416,7 +416,6 @@ func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString 
 		bArrayMemberAlreadyWritten = true
 	}
 	buffer.WriteString("]")
-
 	fmt.Printf("- getQueryResultForQueryString queryResult:\n%s\n", buffer.String())
 
 	return buffer.Bytes(), nil
@@ -547,8 +546,8 @@ func (t *SimpleChaincode) issueCreditToOrg(stub shim.ChaincodeStubInterface, arg
 	}
 	err = tx.putTransaction(stub)
 	if err != nil {
-		fmt.Println("transfer putTransaction fail:", err.Error())
-		return shim.Error("transfer putTransaction fail:" + err.Error())
+		fmt.Println("issueCreditToOrg putTransaction fail:", err.Error())
+		return shim.Error("issueCreditToOrg putTransaction fail:" + err.Error())
 	}
 
 	return shim.Success(nil)
@@ -631,7 +630,7 @@ func (t *SimpleChaincode) queryAgency(stub shim.ChaincodeStubInterface) pb.Respo
 	}
 	agencyBytes, err = json.Marshal(agency)
 	if err != nil {
-		fmt.Println("queryAgency marshal fail:", err.Error())
+		fmt.Println("queryAgency Marshal fail:", err.Error())
 		return shim.Error(err.Error())
 	}
 
@@ -646,7 +645,7 @@ func (t *SimpleChaincode) queryOrg(stub shim.ChaincodeStubInterface, args string
 	}
 	orgBytes, err = json.Marshal(org)
 	if err != nil {
-		fmt.Println("queryOrg marshal fail:", err.Error())
+		fmt.Println("queryOrg Marshal fail:", err.Error())
 		return shim.Error(err.Error())
 	}
 
